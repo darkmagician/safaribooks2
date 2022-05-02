@@ -406,12 +406,22 @@ class SafariBooks:
 
         if not args.no_cookies:
             json.dump(self.session.cookies.get_dict(), open(COOKIES_FILE, "w"))
-
-        self.display.done(os.path.join(self.BOOK_PATH, self.book_id + ".epub"))
+        published = self.publish()
+        self.display.done(published)
         self.display.unregister()
 
         if not self.display.in_error and not args.log:
             os.remove(self.display.log_file)
+
+    def publish(self):
+        srcFile = os.path.join(self.BOOK_PATH, self.book_id) + ".epub"
+
+        publish_folder = os.path.join(PATH, "publish")
+        os.makedirs(publish_folder)
+        fileName = self.clean_book_title + ".epub"
+        targetFile = os.path.join(publish_folder, fileName)
+        shutil.copyfile(srcFile, targetFile)
+        return targetFile
 
     def handle_cookie_update(self, set_cookie_headers):
         for morsel in set_cookie_headers:
@@ -825,7 +835,6 @@ class SafariBooks:
                     else:
                         self.images.append(urljoin(next_chapter['asset_base_url'], img_url))
 
-
             # Stylesheets
             self.chapter_stylesheets = []
             if "stylesheets" in next_chapter and len(next_chapter["stylesheets"]):
@@ -841,7 +850,7 @@ class SafariBooks:
                         ("File `%s` already exists.\n"
                          "    If you want to download again all the book,\n"
                          "    please delete the output directory '" + self.BOOK_PATH + "' and restart the program.")
-                         % self.filename.replace(".html", ".xhtml")
+                        % self.filename.replace(".html", ".xhtml")
                     )
                     self.display.book_ad_info = 2
 
@@ -871,7 +880,6 @@ class SafariBooks:
 
         self.css_done_queue.put(1)
         self.display.state(len(self.css), self.css_done_queue.qsize())
-
 
     def _thread_download_images(self, url):
         image_name = url.split("/")[-1]
@@ -965,7 +973,7 @@ class SafariBooks:
                              for sub in self.book_info.get("subjects", []))
 
         return self.CONTENT_OPF.format(
-            (self.book_info.get("isbn",  self.book_id)),
+            (self.book_info.get("isbn", self.book_id)),
             escape(self.book_title),
             authors,
             escape(self.book_info.get("description", "")),
@@ -990,8 +998,8 @@ class SafariBooks:
             r += "<navPoint id=\"{0}\" playOrder=\"{1}\">" \
                  "<navLabel><text>{2}</text></navLabel>" \
                  "<content src=\"{3}\"/>".format(
-                    cc["fragment"] if len(cc["fragment"]) else cc["id"], c,
-                    escape(cc["label"]), cc["href"].replace(".html", ".xhtml").split("/")[-1]
+                     cc["fragment"] if len(cc["fragment"]) else cc["id"], c,
+                     escape(cc["label"]), cc["href"].replace(".html", ".xhtml").split("/")[-1]
                  )
 
             if cc["children"]:
@@ -1046,7 +1054,7 @@ class SafariBooks:
             self.create_toc().encode("utf-8", "xmlcharrefreplace")
         )
 
-        zip_file = os.path.join(PATH, "Books", self.book_id)
+        zip_file = os.path.join(PATH, "Cache", self.book_id)
         if os.path.isfile(zip_file + ".zip"):
             os.remove(zip_file + ".zip")
 

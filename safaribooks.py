@@ -19,6 +19,7 @@ from urllib.parse import urljoin, urlparse, parse_qs, quote_plus
 
 
 PATH = os.path.dirname(os.path.realpath(__file__))
+CACHE = os.path.join(PATH, "Cache")
 COOKIES_FILE = os.path.join(PATH, "cookies.json")
 
 ORLY_BASE_HOST = "oreilly.com"  # PLEASE INSERT URL HERE
@@ -359,7 +360,7 @@ class SafariBooks:
         self.clean_book_title = "".join(self.escape_dirname(self.book_title).split(",")[:2]) \
                                 + " ({0})".format(self.book_id)
 
-        books_dir = os.path.join(PATH, "Books")
+        books_dir = CACHE
         if not os.path.isdir(books_dir):
             os.mkdir(books_dir)
 
@@ -417,7 +418,8 @@ class SafariBooks:
         srcFile = os.path.join(self.BOOK_PATH, self.book_id) + ".epub"
 
         publish_folder = os.path.join(PATH, "publish")
-        os.makedirs(publish_folder)
+        if not os.path.exists(publish_folder):
+            os.makedirs(publish_folder)
         fileName = self.clean_book_title + ".epub"
         targetFile = os.path.join(publish_folder, fileName)
         shutil.copyfile(srcFile, targetFile)
@@ -900,7 +902,7 @@ class SafariBooks:
                 return
 
             with open(image_path, 'wb') as img:
-                for chunk in response.iter_content(1024):
+                for chunk in response.iter_content(102400):
                     img.write(chunk)
 
         self.images_done_queue.put(1)
@@ -1054,7 +1056,7 @@ class SafariBooks:
             self.create_toc().encode("utf-8", "xmlcharrefreplace")
         )
 
-        zip_file = os.path.join(PATH, "Cache", self.book_id)
+        zip_file = os.path.join(CACHE, self.book_id)
         if os.path.isfile(zip_file + ".zip"):
             os.remove(zip_file + ".zip")
 
